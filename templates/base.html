@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Post Slicer{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="bi bi-scissors"></i> Post Slicer
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="navigateWithWarning('{{ url_for('home') }}')">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="navigateWithWarning('{{ url_for('about') }}')">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="navigateWithWarning('{{ url_for('help') }}')">Help</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Toast for clipboard feedback -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100">
+        <div id="clipboardToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="bi bi-clipboard-check text-success me-2"></i>
+                <strong class="me-auto">Copied!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Text copied to clipboard successfully.
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation warning modal -->
+    <div class="modal fade" id="navigationWarningModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Warning</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    You have unsaved text. Are you sure you want to navigate away? Your text will be lost.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay Here</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmNavigation()">Leave Page</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let pendingNavigation = null;
+
+        function navigateWithWarning(url) {
+            // Only show warning on home page with text
+            if (window.location.pathname === '/' && document.getElementById('mainTextarea')) {
+                const text = document.getElementById('mainTextarea').value.trim();
+                if (text) {
+                    pendingNavigation = url;
+                    new bootstrap.Modal(document.getElementById('navigationWarningModal')).show();
+                    return;
+                }
+            }
+            window.location.href = url;
+        }
+
+        function confirmNavigation() {
+            if (pendingNavigation) {
+                window.location.href = pendingNavigation;
+            }
+        }
+
+        function showClipboardToast() {
+            const toast = new bootstrap.Toast(document.getElementById('clipboardToast'));
+            toast.show();
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showClipboardToast();
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showClipboardToast();
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
